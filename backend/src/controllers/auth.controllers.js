@@ -88,10 +88,52 @@ export const logout = (req, res) => {
 };
 
 export const onboarding = async (req, res) => {
-    // let {email,}
-    try {
-        
-    } catch (error) {
-        
+  try {
+
+    let { nativeLanguage, learningLanguage, bio, location, fullName } =
+      req.body;
+    if (
+      !fullName ||
+      !nativeLanguage ||
+      !learningLanguage ||
+      !bio ||
+      !location
+    ) {
+      return res.status(400).json({
+        message: 'Please fill all fields',
+        missingFields: [
+          !fullName && 'fullName',
+          !nativeLanguage && 'nativeLanguage',
+          !learningLanguage && 'learningLanguage',
+          !bio && 'bio',
+          !location && 'location',
+        ].filter(Boolean),
+      });
     }
+    let userId = req.user._id;
+
+
+    let updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { ...req.body, isOnboarded: true },
+      { new: true }
+    );
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    try {
+      await upsertStreamUser({
+        id: updatedUser._id,
+        name: updatedUser.fullName,
+        image: updatedUser.profilePic || '',
+      });
+      console.log('Stream user upserted for', updatedUser.fullName);
+    } catch (error) {
+      console.log('Error during stream user upsert', error);
+    }
+    res.status(200).json({ success: true, updatedUser });
+  } catch (error) {
+    console.log('Error during onboarding', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 };
