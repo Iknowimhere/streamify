@@ -8,4 +8,8 @@ router.post('/login', login);
 router.post('/logout', logout);
 router.put('/onboard', auth, onboarding);
 
+router.get('/me', auth, (req, res) => {
+  res.json(req.user);
+});
+
 export default router;
